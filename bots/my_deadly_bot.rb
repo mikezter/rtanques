@@ -1,14 +1,23 @@
 class MyDeadlyBot < RTanque::Bot::Brain
-  NAME = 'my_deadly_bot'
+  NAME = 'sebastian_deadly_bot'
   include RTanque::Bot::BrainHelper
 
   def tick!
-    self.make_circles
-    self.command.fire(0.25)
+    self.seek_enemy
+    self.atack_enemy if @reflection
   end
 
-  def make_circles
-    command.speed = 5
-    command.heading = sensors.heading + 0.01
+  def seek_enemy
+    @reflection = sensors.radar.first
+    unless @reflection
+      command.radar_heading = sensors.radar_heading + MAX_RADAR_ROTATION
+    end
+  end
+
+  def atack_enemy
+    command.heading = @reflection.heading
+    command.turret_heading = @reflection.heading
+    command.speed = @reflection.distance > 200 ? 1 : 0 
+    command.fire
   end
 end
