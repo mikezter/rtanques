@@ -2,5 +2,5 @@
 source "https://rubygems.org"
 
 # gem "rails"
-gem 'rtanque'
+gem 'rtanque', git: 'git://github.com/awilliams/RTanque.git'
 gem 'pry'
