@@ -16,7 +16,7 @@ class BahamaMama < RTanque::Bot::Brain
   WEST = W =          6.0 * EIGHTH_ANGLE
   NORTH_WEST = NW =   7.0 * EIGHTH_ANGLE
 
-  attr_accessor :clockwise, :go_west
+  attr_accessor :clockwise
 
   def energie!
     command.speed = MAX_BOT_SPEED
@@ -29,30 +29,64 @@ class BahamaMama < RTanque::Bot::Brain
   end
 
   def switch_turret_direction
-    if sensors.turret_heading >= WEST
-      @clockwise = false
-    elsif sensors.turret_heading <= EAST
-      @clockwise = true
+    if sensors.position.on_top_wall?
+
+      if sensors.turret_heading >= WEST
+        @clockwise = false
+      elsif sensors.turret_heading <= EAST
+        @clockwise = true
+      end
+
+    elsif sensors.position.on_right_wall?
+
+      if sensors.turret_heading <= SOUTH
+        @clockwise = true
+      elsif sensors.turret_heading <= EAST
+        @clockwise = false
+      end
+
+    elsif sensors.position.on_bottom_wall?
+
+      if sensors.turret_heading <= EAST
+        @clockwise = false
+      elsif sensors.turret_heading <= WEST
+        @clockwise = true
+      end
+
+    elsif sensors.position.on_left_wall?
+
+      if sensors.turret_heading >= WEST
+        @clockwise = true
+      elsif sensors.turret_heading >= SOUTH
+        @clockwise = false
+      end
+
     end
   end
 
-  def switch_direction
-    if sensors.position.on_left_wall?
-      @go_west = false
+  def heading
+    return NORTH unless sensors.position.on_wall?
+    if sensors.position.on_top_wall?
+      if sensors.position.on_right_wall?
+        SOUTH
+      else
+        EAST
+      end
+    elsif sensors.position.on_bottom_wall?
+      if sensors.position.on_left_wall?
+        NORTH
+      else
+        WEST
+      end
     elsif sensors.position.on_right_wall?
-      @go_west = true
+      SOUTH
+    elsif sensors.position.on_left_wall?
+      NORTH
     end
   end
 
   def kurs_339
-    switch_direction
-    if !sensors.position.on_top_wall?
-      command.heading = NORTH
-    elsif go_west
-      command.heading = WEST
-    elsif !go_west
-      command.heading = EAST
-    end
+    command.heading = heading
   end
 
   def feuer
