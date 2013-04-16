@@ -16,6 +16,7 @@ class BahamaMama < RTanque::Bot::Brain
   WEST = W =          6.0 * EIGHTH_ANGLE
   NORTH_WEST = NW =   7.0 * EIGHTH_ANGLE
 
+  MARGIN = 200
   attr_accessor :clockwise
 
   def energie!
@@ -65,24 +66,25 @@ class BahamaMama < RTanque::Bot::Brain
   end
 
   def heading
-    return NORTH unless sensors.position.on_wall?
-    if sensors.position.on_top_wall?
-      if sensors.position.on_right_wall?
-        SOUTH
-      else
-        EAST
-      end
-    elsif sensors.position.on_bottom_wall?
-      if sensors.position.on_left_wall?
-        NORTH
-      else
-        WEST
-      end
-    elsif sensors.position.on_right_wall?
+    return NORTH if initializing?
+    if near_top_wall? && near_right_wall?
       SOUTH
-    elsif sensors.position.on_left_wall?
+    elsif near_right_wall? && near_bottom_wall?
+      WEST
+    elsif near_bottom_wall? && near_left_wall?
       NORTH
+    elsif near_left_wall? && near_top_wall?
+      EAST
+    elsif near_right_wall?
+      SOUTH
+    elsif near_bottom_wall?
+      WEST
+    elsif near_left_wall?
+      NORTH
+    elsif near_top_wall?
+      EAST
     end
+
   end
 
   def kurs_339
@@ -91,6 +93,28 @@ class BahamaMama < RTanque::Bot::Brain
 
   def feuer
     command.fire 1
+  end
+
+  def near_left_wall?
+    sensors.position.x < MARGIN
+  end
+
+  def near_bottom_wall?
+    sensors.position.y < MARGIN
+  end
+
+  def near_right_wall?
+    sensors.position.x > arena.width - MARGIN
+  end
+
+  def near_top_wall?
+    sensors.position.y > arena.height - MARGIN
+  end
+
+  def initializing?
+    @initializing = true unless defined?(@initializing)
+    @initializing = false if near_top_wall?
+    @initializing
   end
 
   def tick!
