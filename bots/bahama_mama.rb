@@ -4,6 +4,7 @@ class BahamaMama < RTanque::Bot::Brain
   FULL_ANGLE   =      Math::PI * 2.0
   HALF_ANGLE   =      Math::PI
   EIGHTH_ANGLE =      Math::PI / 4.0
+  QUARTER_ANGLE =      Math::PI / 2.0
   ONE_DEGREE   =      FULL_ANGLE / 360.0
   FULL_RANGE   =      (0..FULL_ANGLE)
 
@@ -17,6 +18,7 @@ class BahamaMama < RTanque::Bot::Brain
   NORTH_WEST = NW =   7.0 * EIGHTH_ANGLE
 
   MARGIN = 200
+  FIRE_ANGLE = 3 * EIGHTH_ANGLE
   attr_accessor :clockwise
 
   def energie!
@@ -24,44 +26,20 @@ class BahamaMama < RTanque::Bot::Brain
   end
 
   def phaser
-    switch_turret_direction
-    command.turret_heading = sensors.turret_heading + ONE_DEGREE if clockwise
-    command.turret_heading = sensors.turret_heading - ONE_DEGREE unless clockwise
+    command.turret_heading = RTanque::Heading.new(heading + QUARTER_ANGLE + turret_rotation)
   end
 
-  def switch_turret_direction
-    if sensors.position.on_top_wall?
+  def turret_rotation
+    if @offset > FIRE_ANGLE / 2
+      @clockwise = false
+    elsif @offset < -(FIRE_ANGLE / 2)
+      @clockwise = true
+    end
 
-      if sensors.turret_heading >= WEST
-        @clockwise = false
-      elsif sensors.turret_heading <= EAST
-        @clockwise = true
-      end
-
-    elsif sensors.position.on_right_wall?
-
-      if sensors.turret_heading <= SOUTH
-        @clockwise = true
-      elsif sensors.turret_heading <= EAST
-        @clockwise = false
-      end
-
-    elsif sensors.position.on_bottom_wall?
-
-      if sensors.turret_heading <= EAST
-        @clockwise = false
-      elsif sensors.turret_heading <= WEST
-        @clockwise = true
-      end
-
-    elsif sensors.position.on_left_wall?
-
-      if sensors.turret_heading >= WEST
-        @clockwise = true
-      elsif sensors.turret_heading >= SOUTH
-        @clockwise = false
-      end
-
+    if @clockwise
+      @offset += ONE_DEGREE
+    else
+      @offset -= ONE_DEGREE
     end
   end
 
@@ -84,7 +62,6 @@ class BahamaMama < RTanque::Bot::Brain
     elsif near_top_wall?
       EAST
     end
-
   end
 
   def kurs_339
@@ -113,6 +90,8 @@ class BahamaMama < RTanque::Bot::Brain
 
   def initializing?
     @initializing = true unless defined?(@initializing)
+    @clockwise = false unless defined?(@clockwise)
+    @offset ||= 0
     @initializing = false if near_top_wall?
     @initializing
   end
